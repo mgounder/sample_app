@@ -1,8 +1,15 @@
 SampleApp::Application.routes.draw do
-  resources :users
-  resources :sessions,    only: [:new, :create, :destroy]
+  #Listing 11.18 Adding followed_users and followers action to the Users controller
+  resources :users do
+    member do
+      get :following, :followers
+    end
+  end
+  resources :sessions,      only: [:new, :create, :destroy]
   #Listing 10.25 Routes for the Microposts resource
-  resources :microposts,  only: [:create, :destroy]
+  resources :microposts,    only: [:create, :destroy]
+  #Listing 11.24 Adding the routes for user relationships
+  resources :relationships, only: [:create, :destroy]
 
   root to: 'static_pages#home'
 

@@ -28,13 +28,50 @@ describe User do
   it { should respond_to(:remember_token) }
   it { should respond_to(:authenticate) }
   it { should respond_to(:admin) }
-  # 10.9 A test for the user's microposts attribute
+  #Listing 10.9 A test for the user's microposts attribute
   it { should respond_to(:microposts) }
-  #10.38 Tests for the presence of the status feed
+  #Listing 10.38 Tests for the presence of the status feed
   it { should respond_to(:feed) }
+  #Listing 11.3 Testing for the user.relationships attribute
+  it { should respond_to(:relationships) }
+  #Listing 11.9 A Test for the user.followed_users attribute
+  it { should respond_to(:followed_users) }
+  #Listing 11.11 Tests for some "following" utility methods
+  it { should respond_to(:following?) }
+  it { should respond_to(:follow!) }
+  #Listing 11.13 A test for unfollowing a user.
+  it { should respond_to(:unfollow!) }
+  #Listing 11.15 Testing for reverse relationships
+  it { should respond_to(:followers) }
 
   it { should be_valid }
   it { should_not be_admin }
+  
+  #Listing 11.11 Tests for some "following" utility methods
+  describe "following" do
+    let(:other_user) { FactoryGirl.create(:user) }    
+    before do
+      @user.save
+      @user.follow!(other_user)
+    end
+
+    it { should be_following(other_user) }
+    its(:followed_users) { should include(other_user) }
+
+    #Listing 11.13 A test for unfollowing a user.
+    describe "and unfollowing" do
+      before { @user.unfollow!(other_user) }
+
+      it { should_not be_following(other_user) }
+      its(:followed_users) { should_not include(other_user) }
+    end
+    
+    #Listing 11.15 Testing for reverse relationships
+    describe "followed user" do
+      subject { other_user }
+      its(:followers) { should include(@user) }
+    end
+  end
   
   #Listing 10.13 Testing the order of a user's microposts
   describe "micropost associations" do
@@ -60,15 +97,27 @@ describe User do
       end
     end
     
-    #10.38 Tests for the (proto-)status feed
+    #Listing 10.38 Tests for the (proto-)status feed
+    #Listing 11.41 Updates to include final tests for the status feed
     describe "status" do
       let(:unfollowed_post) do
         FactoryGirl.create(:micropost, user: FactoryGirl.create(:user))
+      end
+      let(:followed_user) { FactoryGirl.create(:user) }
+      
+      before do
+        @user.follow!(followed_user)
+        3.times { followed_user.microposts.create!(content: "Lorem ipsum") }
       end
 
       its(:feed) { should include(newer_micropost) }
       its(:feed) { should include(older_micropost) }
       its(:feed) { should_not include(unfollowed_post) }
+      its(:feed) do
+        followed_user.microposts.each do |micropost|
+          should include(micropost)
+        end
+      end
     end
   end
   
