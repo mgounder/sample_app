@@ -21,6 +21,15 @@ module SessionsHelper
     user == current_user
   end
   
+  #Listing 10.27 Moving the signed_in_user method into the Sessions helper from
+  #the Users controller b/c it will now be used in Users and Microposts controller
+  def signed_in_user
+    unless signed_in?
+      store_location
+      redirect_to signin_path, notice: "Please sign in."
+    end
+  end
+  
   def sign_out
     self.current_user = nil
     cookies.delete(:remember_token)

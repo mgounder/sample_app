@@ -28,9 +28,49 @@ describe User do
   it { should respond_to(:remember_token) }
   it { should respond_to(:authenticate) }
   it { should respond_to(:admin) }
+  # 10.9 A test for the user's microposts attribute
+  it { should respond_to(:microposts) }
+  #10.38 Tests for the presence of the status feed
+  it { should respond_to(:feed) }
 
   it { should be_valid }
   it { should_not be_admin }
+  
+  #Listing 10.13 Testing the order of a user's microposts
+  describe "micropost associations" do
+
+    before { @user.save }
+    let!(:older_micropost) do 
+      FactoryGirl.create(:micropost, user: @user, created_at: 1.day.ago)
+    end
+    let!(:newer_micropost) do
+      FactoryGirl.create(:micropost, user: @user, created_at: 1.hour.ago)
+    end
+
+    it "should have the right microposts in the right order" do
+      @user.microposts.should == [newer_micropost, older_micropost]
+    end
+    
+    #Listing 10.15 Testing that microposts are destroyed when users are
+    it "should destroy associated microposts" do
+      microposts = @user.microposts
+      @user.destroy
+      microposts.each do |micropost|
+        Micropost.find_by_id(micropost.id).should be_nil
+      end
+    end
+    
+    #10.38 Tests for the (proto-)status feed
+    describe "status" do
+      let(:unfollowed_post) do
+        FactoryGirl.create(:micropost, user: FactoryGirl.create(:user))
+      end
+
+      its(:feed) { should include(newer_micropost) }
+      its(:feed) { should include(older_micropost) }
+      its(:feed) { should_not include(unfollowed_post) }
+    end
+  end
   
   describe "with admin attribute set to 'true'" do
     before { @user.toggle!(:admin) }
